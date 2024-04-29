@@ -7,6 +7,7 @@ from loss import *
 
 import torch
 import scipy.io as sio
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
@@ -47,7 +48,12 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-
+def fd(loss):
+    constants = np.array((-137/60, 5, -5, 10/3, -5/4, 1/5))
+    pointwise_multiplication = [
+        loss[i] * constants[i] for i in range(len(constants))
+    ]
+    return pointwise_multiplication
 if __name__ == "__main__":
 
     if args.db == "MSRCv1":
@@ -149,6 +155,7 @@ if __name__ == "__main__":
         lmd = 0.01
         beta = 0.01
 
+
     set_seed(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     mv_data = MultiviewData(args.db, device)
@@ -170,7 +177,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(mnw.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
     if args.load_model:
-        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db, map_location='cpu')
+        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db)
         mnw.load_state_dict(state_dict)
 
     else:
@@ -180,10 +187,45 @@ if __name__ == "__main__":
 
         t = time.time()
         fine_tuning_loss_values = np.zeros(args.con_epochs, dtype=np.float64)
+        beta=0.1
+        epsilon=1e-8
+
+        lc=[]
+        la=[]
+        lpre=[]
+        epoch_per=0.1*args.con_epochs
+        weights=[1]*3
+        slope=[]*3
+        Loss_3=[]*3
+        average_cmp_val=[]*3
+        rate_of_changes=[]*3
         for epoch in range(args.con_epochs):
-            total_loss = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
-                                           args.temperature_l, args.normalized, epoch, optimizer)
-            fine_tuning_loss_values[epoch] = total_loss
+            if epoch<6:
+                total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
+                                           args.temperature_l, args.normalized, epoch, optimizer,weights)
+                for curr_loss in curr_loss_3:
+                    Loss_3.append(curr_loss)
+                fine_tuning_loss_values[epoch] = total_loss            
+            else:
+                average_cmp_val=[]*3
+                rate_of_changes=[]*3
+                for (idx,loss_cmp_vals) in enumerate(Loss_3):
+                    print(loss_cmp_vals)
+                    average_cmp_val[idx]=(np.mean(loss_cmp_vals.item()[-6:]))
+                    rate_of_changes[idx]=fd(loss_cmp_vals[-6:0])
+                average_cmp_val=torch.tensor(average_cmp_val)
+                rate_of_changes=torch.tensor(rate_of_changes)
+                exp_of_input = torch.exp(beta * (rate_of_changes - rate_of_changes.max()))
+
+                exp_of_input = torch.multiply(average_cmp_val, exp_of_input)
+                weights= exp_of_input / (torch.sum(exp_of_input) + epsilon)
+                lmd=1
+                beta=1
+                total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
+                                           args.temperature_l, args.normalized, epoch, optimizer,weights)
+                for curr_loss in curr_loss_3:
+                    Loss_3.append(curr_loss)
+                fine_tuning_loss_values[epoch] = total_loss
             # if epoch > 0 and (epoch % 50 == 0 or epoch == args.con_epochs - 1):
             #     acc, nmi, pur, ari = valid(mnw, mv_data, args.batch_size)
             #     with open('result_%s.txt' % args.db, 'a+') as f:
