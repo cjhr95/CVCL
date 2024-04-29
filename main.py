@@ -170,7 +170,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(mnw.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
     if args.load_model:
-        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db)
+        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db, map_location='cpu')
         mnw.load_state_dict(state_dict)
 
     else:
