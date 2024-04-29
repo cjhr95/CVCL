@@ -60,19 +60,20 @@ def contrastive_train(network_model, mv_data, mvc_loss, batch_size, lmd, beta, t
         curr_loss_val=[]
         for loss_values in loss_list:
             curr_loss_val.append(sum(loss_values))
-            
+
         total_loss=0
         for idx,list in enumerate(loss_list):
             total_loss+=sum(list)*weights[idx]
+        #print(total_loss)
         optimizer.zero_grad()
-        total_loss.backward()
+        total_loss.sum().backward(retain_graph=True)
         optimizer.step()
-        total_loss += total_loss.item()
+        total_loss += total_loss.sum().item()
 
     if epoch % 10 == 0:
-        print('Contrastive_train, epoch {} loss:{:.7f}'.format(epoch, total_loss / num_samples))
+        print('Contrastive_train, epoch {} loss:{:.7f}'.format(epoch, total_loss.sum() / num_samples))
 
-    return total_loss,curr_loss_val
+    return total_loss.sum(),curr_loss_val
 
 
 def inference(network_model, mv_data, batch_size):

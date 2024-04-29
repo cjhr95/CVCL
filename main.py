@@ -209,15 +209,19 @@ if __name__ == "__main__":
             else:
                 average_cmp_val=[]*3
                 rate_of_changes=[]*3
+                Loss_3_np = []
+                for tensor in Loss_3:
+                    Loss_3_np.append(tensor.item())
+                #print(Loss_3_np[-6:])
                 for (idx,loss_cmp_vals) in enumerate(Loss_3):
-                    print(loss_cmp_vals)
-                    average_cmp_val[idx]=(np.mean(loss_cmp_vals.item()[-6:]))
-                    rate_of_changes[idx]=fd(loss_cmp_vals[-6:0])
+                    #print(loss_cmp_vals)
+                    average_cmp_val.append(np.mean(Loss_3_np[-6:]))
+                    rate_of_changes.append(fd(Loss_3_np[-6:]))
                 average_cmp_val=torch.tensor(average_cmp_val)
                 rate_of_changes=torch.tensor(rate_of_changes)
                 exp_of_input = torch.exp(beta * (rate_of_changes - rate_of_changes.max()))
 
-                exp_of_input = torch.multiply(average_cmp_val, exp_of_input)
+                exp_of_input = torch.multiply(torch.tensor(Loss_3_np[-6:], requires_grad=True), exp_of_input)
                 weights= exp_of_input / (torch.sum(exp_of_input) + epsilon)
                 lmd=1
                 beta=1
