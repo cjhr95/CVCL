@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='CVCLNet')
 parser.add_argument('--load_model', default=False, help='Testing if True or training.')
 parser.add_argument('--save_model', default=False, help='Saving the model after training.')
 
-parser.add_argument('--db', type=str, default='MSRCv1',
+parser.add_argument('--db', type=str, default='scene',
                     choices=['MSRCv1', 'MNIST-USPS', 'COIL20', 'scene', 'hand', 'Fashion', 'BDGP'],
                     help='dataset name')
 parser.add_argument('--seed', type=int, default=10, help='Initializing random seed.')
@@ -49,11 +49,13 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 def fd(loss):
+    #print(loss[0])
+    #loss = loss.detach().numpy()
     constants = np.array((-137/60, 5, -5, 10/3, -5/4, 1/5))
     pointwise_multiplication = [
         loss[i] * constants[i] for i in range(len(constants))
     ]
-    return pointwise_multiplication
+    return sum(pointwise_multiplication)
 if __name__ == "__main__":
 
     if args.db == "MSRCv1":
@@ -157,7 +159,8 @@ if __name__ == "__main__":
 
 
     set_seed(args.seed)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     mv_data = MultiviewData(args.db, device)
     num_views = len(mv_data.data_views)
     num_samples = mv_data.labels.size
@@ -177,7 +180,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(mnw.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
     if args.load_model:
-        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db)
+        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db, map_location=torch.device('cpu'))
         mnw.load_state_dict(state_dict)
 
     else:
@@ -190,45 +193,52 @@ if __name__ == "__main__":
         beta=0.1
         epsilon=1e-8
 
-        lc=[]
-        la=[]
-        lpre=[]
         epoch_per=0.1*args.con_epochs
         weights=[1]*3
         slope=[]*3
-        Loss_3=[]*3
+        Loss_3=[[] for _ in range(3)]
         average_cmp_val=[]*3
         rate_of_changes=[]*3
+        # weights=torch.tensor(weights)
+        # slope=torch.tensor(slope)
+        # Loss_3=torch.tensor(Loss_3)
+        # average_cmp_val=torch.tensor(average_cmp_val)
+        # rate_of_changes=torch.tensor(rate_of_changes)
         for epoch in range(args.con_epochs):
             if epoch<6:
                 total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
                                            args.temperature_l, args.normalized, epoch, optimizer,weights)
-                for curr_loss in curr_loss_3:
-                    Loss_3.append(curr_loss)
+                for (idx,curr_loss) in enumerate(curr_loss_3):
+                    # if torch.is_tensor(Loss_3):
+                    #     Loss_3 = Loss_3.tolist()
+                    Loss_3[idx].append(curr_loss.item())
                 fine_tuning_loss_values[epoch] = total_loss            
             else:
-                average_cmp_val=[]*3
-                rate_of_changes=[]*3
-                Loss_3_np = []
-                for tensor in Loss_3:
-                    Loss_3_np.append(tensor.item())
-                #print(Loss_3_np[-6:])
+                #print("LOSs3---",Loss_3)
+                average_cmp_val=[0]*3
+                rate_of_changes=[0]*3
+               # rate_of_changes=torch.tensor(rate_of_changes)
+                #Loss_3=torch.tensor(Loss_3)
                 for (idx,loss_cmp_vals) in enumerate(Loss_3):
-                    #print(loss_cmp_vals)
-                    average_cmp_val.append(np.mean(Loss_3_np[-6:]))
-                    rate_of_changes.append(fd(Loss_3_np[-6:]))
-                average_cmp_val=torch.tensor(average_cmp_val)
+                    #print("each_loss",loss_cmp_vals[-6:])
+                    average_cmp_val[idx]=np.mean(loss_cmp_vals[-6:])
+                    rate_of_changes[idx]=fd(loss_cmp_vals[-6:])
                 rate_of_changes=torch.tensor(rate_of_changes)
-                exp_of_input = torch.exp(beta * (rate_of_changes - rate_of_changes.max()))
-
-                exp_of_input = torch.multiply(torch.tensor(Loss_3_np[-6:], requires_grad=True), exp_of_input)
-                weights= exp_of_input / (torch.sum(exp_of_input) + epsilon)
+                average_cmp_val=torch.tensor(average_cmp_val)
+                #print("Average------",average_cmp_val)
+            #print("Rate of----- ",rate_of_changes)
+                #concatenated_tensor = torch.cat(rate_of_changes)
+                #for idx,rate_of_change in enumerate(rate_of_changes):
+                exp_of_input = torch.exp(beta * (rate_of_changes - torch.max(rate_of_changes)))
+                exp_of_input = torch.multiply(average_cmp_val[idx], exp_of_input)
+                weights=exp_of_input / (torch.sum(exp_of_input) + epsilon)
+                #weights.append(weight)
                 lmd=1
                 beta=1
                 total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
                                            args.temperature_l, args.normalized, epoch, optimizer,weights)
-                for curr_loss in curr_loss_3:
-                    Loss_3.append(curr_loss)
+                for (idx,curr_loss) in enumerate(curr_loss_3):
+                    Loss_3[idx].append(curr_loss.item())
                 fine_tuning_loss_values[epoch] = total_loss
             # if epoch > 0 and (epoch % 50 == 0 or epoch == args.con_epochs - 1):
             #     acc, nmi, pur, ari = valid(mnw, mv_data, args.batch_size)

@@ -15,6 +15,8 @@ def pre_train(network_model, mv_data, batch_size, epochs, optimizer):
 
     criterion = torch.nn.MSELoss()
     for epoch in range(epochs):
+        # if(epoch>10):
+        #     break
         total_loss = 0.
         for batch_idx, (sub_data_views, _) in enumerate(mv_data_loader):
             _, dvs, _ = network_model(sub_data_views)
@@ -46,34 +48,28 @@ def contrastive_train(network_model, mv_data, mvc_loss, batch_size, lmd, beta, t
     total_loss = 0.
     for batch_idx, (sub_data_views, _) in enumerate(mv_data_loader):
         lbps, dvs, _ = network_model(sub_data_views)
-        loss_list = []*3
-        for i in range(3):
-            loss_list.append([])
+        loss_list = [[] for _ in range(3)]
         for i in range(num_views):
             for j in range(i + 1, num_views):
-                #print(len(loss_list))
-                #print(len(lbps[i]))
-                #print(len(lbps[j]))
                 loss_list[0].append(lmd * mvc_loss.forward_label(lbps[i], lbps[j], temperature_l, normalized))
                 loss_list[1].append(beta * mvc_loss.forward_prob(lbps[i], lbps[j]))
             loss_list[2].append(criterion(sub_data_views[i], dvs[i]))
         curr_loss_val=[]
         for loss_values in loss_list:
             curr_loss_val.append(sum(loss_values))
-
+            
         total_loss=0
         for idx,list in enumerate(loss_list):
             total_loss+=sum(list)*weights[idx]
-        #print(total_loss)
         optimizer.zero_grad()
-        total_loss.sum().backward(retain_graph=True)
+        total_loss.backward()
         optimizer.step()
-        total_loss += total_loss.sum().item()
+        total_loss += total_loss.item()
 
     if epoch % 10 == 0:
-        print('Contrastive_train, epoch {} loss:{:.7f}'.format(epoch, total_loss.sum() / num_samples))
-
-    return total_loss.sum(),curr_loss_val
+        print('Contrastive_train, epoch {} loss:{:.7f}'.format(epoch, total_loss / num_samples))
+    # curr_loss_val=curr_loss_val.tolist()
+    return total_loss,curr_loss_val
 
 
 def inference(network_model, mv_data, batch_size):

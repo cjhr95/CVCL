@@ -1,0 +1,45 @@
+BDGP
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9776 NMI1 = 0.9267 PUR1 = 0.9776 ARI1=0.9450
+ACC2 = 0.9792 NMI2 = 0.9447 PUR2 = 0.9792 ARI2=0.9492
+Clustering results on semantic labels: 2500
+ACC = 0.9868 NMI = 0.9547 PUR = 0.9868 ARI=0.9673
+
+Scene-15
+Clustering results on cluster assignments of each view:
+ACC1 = 0.3777 NMI1 = 0.4026 PUR1 = 0.4136 ARI1=0.2165
+ACC2 = 0.3897 NMI2 = 0.4326 PUR2 = 0.4321 ARI2=0.2367
+ACC3 = 0.3717 NMI3 = 0.3757 PUR3 = 0.4147 ARI3=0.2112
+Clustering results on semantic labels: 4485
+ACC = 0.3882 NMI = 0.4262 PUR = 0.4312 ARI=0.2340
+
+MSRCv1
+Clustering results on cluster assignments of each view:
+ACC1 = 0.7000 NMI1 = 0.6189 PUR1 = 0.7000 ARI1=0.5186
+ACC2 = 0.6762 NMI2 = 0.6012 PUR2 = 0.6810 ARI2=0.4942
+ACC3 = 0.6857 NMI3 = 0.6162 PUR3 = 0.6857 ARI3=0.5065
+ACC4 = 0.6667 NMI4 = 0.5902 PUR4 = 0.6714 ARI4=0.4798
+ACC5 = 0.6714 NMI5 = 0.5943 PUR5 = 0.6762 ARI5=0.4838
+Clustering results on semantic labels: 210
+ACC = 0.6810 NMI = 0.6116 PUR = 0.6857 ARI=0.5041
+
+MNIST-USPS
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9896 NMI1 = 0.9713 PUR1 = 0.9896 ARI1=0.9770
+ACC2 = 0.9948 NMI2 = 0.9854 PUR2 = 0.9948 ARI2=0.9885
+Clustering results on semantic labels: 5000
+ACC = 0.9958 NMI = 0.9882 PUR = 0.9958 ARI=0.9907
+
+Fashion
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9859 NMI1 = 0.9677 PUR1 = 0.9859 ARI1=0.9693
+ACC2 = 0.9862 NMI2 = 0.9679 PUR2 = 0.9862 ARI2=0.9700
+ACC3 = 0.9893 NMI3 = 0.9731 PUR3 = 0.9893 ARI3=0.9766
+Clustering results on semantic labels: 10000
+ACC = 0.9928 NMI = 0.9816 PUR = 0.9928 ARI=0.9842
+
+Hand
+
+COIL20
+
+
