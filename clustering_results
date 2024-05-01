@@ -25,10 +25,10 @@ ACC = 0.6810 NMI = 0.6116 PUR = 0.6857 ARI=0.5041
 
 MNIST-USPS
 Clustering results on cluster assignments of each view:
-ACC1 = 0.9896 NMI1 = 0.9713 PUR1 = 0.9896 ARI1=0.9770
-ACC2 = 0.9948 NMI2 = 0.9854 PUR2 = 0.9948 ARI2=0.9885
+ACC1 = 0.9950 NMI1 = 0.9851 PUR1 = 0.9950 ARI1=0.9889
+ACC2 = 0.9954 NMI2 = 0.9867 PUR2 = 0.9954 ARI2=0.9898
 Clustering results on semantic labels: 5000
-ACC = 0.9958 NMI = 0.9882 PUR = 0.9958 ARI=0.9907
+ACC = 0.9966 NMI = 0.9899 PUR = 0.9966 ARI=0.9925
 
 Fashion
 Clustering results on cluster assignments of each view:
@@ -39,6 +39,15 @@ Clustering results on semantic labels: 10000
 ACC = 0.9928 NMI = 0.9816 PUR = 0.9928 ARI=0.9842
 
 Hand
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9675 NMI1 = 0.9293 PUR1 = 0.9675 ARI1=0.9298
+ACC2 = 0.9485 NMI2 = 0.8943 PUR2 = 0.9485 ARI2=0.8906
+ACC3 = 0.9695 NMI3 = 0.9314 PUR3 = 0.9695 ARI3=0.9336
+ACC4 = 0.8965 NMI4 = 0.8600 PUR4 = 0.8965 ARI4=0.8257
+ACC5 = 0.9660 NMI5 = 0.9235 PUR5 = 0.9660 ARI5=0.9262
+ACC6 = 0.7650 NMI6 = 0.7180 PUR6 = 0.7650 ARI6=0.6307
+Clustering results on semantic labels: 2000
+ACC = 0.9690 NMI = 0.9308 PUR = 0.9690 ARI=0.9327
 
 COIL20
 
