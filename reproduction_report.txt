@@ -1,0 +1,40 @@
+Paper Reproduction Documentation & Reproduction
+Connor Hallemann, Shreya Reddy Subbareddygari, Samridi Mangla
+
+The code provided to us for the CVCL paper allowed for ease of reproduction. The authors provide each dataset used in the experiment, and a few completed models that were successful in training. The models provided by the authors can be used when passing the --load_model parameter as True when running the main file. The other datasets used in the paper can be tested, however a new model must be trained in order to obtain the results of the clustering. The dataset to use for training/testing can be specified using the --db parameter.
+The results from the original authors are detailed below:
+
+BDGP dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9864 NMI1 = 0.9529 PUR1 = 0.9864 ARI1=0.9664
+ACC2 = 0.9804 NMI2 = 0.9487 PUR2 = 0.9804 ARI2=0.9521
+Clustering results on semantic labels: 2500
+ACC = 0.9920 NMI = 0.9729 PUR = 0.9920 ARI=0.9801
+
+MSRCv1 dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9333 NMI1 = 0.8697 PUR1 = 0.9333 ARI1=0.8502
+ACC2 = 0.9667 NMI2 = 0.9283 PUR2 = 0.9667 ARI2=0.9232
+ACC3 = 0.9619 NMI3 = 0.9175 PUR3 = 0.9619 ARI3=0.9116
+ACC4 = 0.9571 NMI4 = 0.9119 PUR4 = 0.9571 ARI4=0.9034
+ACC5 = 0.9619 NMI5 = 0.9209 PUR5 = 0.9619 ARI5=0.9122
+Clustering results on semantic labels: 210
+ACC = 0.9762 NMI = 0.9498 PUR = 0.9762 ARI=0.9453
+
+MNIST-USPS dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9918 NMI1 = 0.9762 PUR1 = 0.9918 ARI1=0.9819
+ACC2 = 0.9966 NMI2 = 0.9899 PUR2 = 0.9966 ARI2=0.9925
+Clustering results on semantic labels: 5000
+ACC = 0.9970 NMI = 0.9912 PUR = 0.9970 ARI=0.9933
+
+Fashion dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9907 NMI1 = 0.9748 PUR1 = 0.9907 ARI1=0.9796
+ACC2 = 0.9901 NMI2 = 0.9733 PUR2 = 0.9901 ARI2=0.9782
+ACC3 = 0.9895 NMI3 = 0.9714 PUR3 = 0.9895 ARI3=0.9770
+Clustering results on semantic labels: 10000
+ACC = 0.9931 NMI = 0.9821 PUR = 0.9931 ARI=0.9848
+
+The methodology in reproducing the code did not vary much from the original implementation. We were able to easily reproduce the results for the BDGP, MSRCv1, MNIST-USPS and Fashion datasets since the authors provided pre-trained models to test the code. For the remaining provided models, we had to create and train the models ourselves. This was not very complex, only a matter of altering the parameters passed into the main file.
+The time to completely train the other models, via pre-training and contrastive training, varies dramatically. This was the largest challenge in reproducing the results, the time required. For instance, the model based on the Scene-15 dataset took about 6 hours to complete.
