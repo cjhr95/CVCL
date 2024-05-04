@@ -2,7 +2,8 @@ Paper Reproduction Documentation & Reproduction
 Connor Hallemann, Shreya Reddy Subbareddygari, Samridi Mangla
 
 The code provided to us for the CVCL paper allowed for ease of reproduction. The authors provide each dataset used in the experiment, and a few completed models that were successful in training. The models provided by the authors can be used when passing the --load_model parameter as True when running the main file. The other datasets used in the paper can be tested, however a new model must be trained in order to obtain the results of the clustering. The dataset to use for training/testing can be specified using the --db parameter.
-The results from the original authors are detailed below:
+The code was reproduced based on the framework provided in the reproduction.sh file added in this report. The driver file was ran with the load_model parameter set to true for the BDGP, MSRCv1, MNIST-USPS, and Fashion datasets.
+The results from the original models are detailed below:
 
 BDGP dataset:
 Clustering results on cluster assignments of each view:
@@ -36,5 +37,31 @@ ACC3 = 0.9895 NMI3 = 0.9714 PUR3 = 0.9895 ARI3=0.9770
 Clustering results on semantic labels: 10000
 ACC = 0.9931 NMI = 0.9821 PUR = 0.9931 ARI=0.9848
 
+These results correspond to the ACC, NMI, and Purity results detailed in the original paper.
+
 The methodology in reproducing the code did not vary much from the original implementation. We were able to easily reproduce the results for the BDGP, MSRCv1, MNIST-USPS and Fashion datasets since the authors provided pre-trained models to test the code. For the remaining provided models, we had to create and train the models ourselves. This was not very complex, only a matter of altering the parameters passed into the main file.
-The time to completely train the other models, via pre-training and contrastive training, varies dramatically. This was the largest challenge in reproducing the results, the time required. For instance, the model based on the Scene-15 dataset took about 6 hours to complete.
+The time to completely train the other models, via pre-training and contrastive training, varies dramatically. This was the largest challenge in reproducing the results, the time required. For instance, the model based on the Scene-15 dataset took about 6 hours to complete. Despite the issue of time, there were no problems in running the provided code on the authors' GitHub. The datasets and models needed to be extracted from the compressed folders, so the raw MAT files and PTH files were available to be read by the code.
+
+These are the results from models trained on the other datasets provided by the authors:
+COIL20 dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.8465 NMI1 = 0.8889 PUR1 = 0.8506 ARI1=0.8409
+ACC2 = 0.8455 NMI2 = 0.8876 PUR2 = 0.8511 ARI2=0.8345
+Clustering results on semantic labels: 2400
+ACC = 0.8465 NMI = 0.8889 PUR = 0.8507 ARI=0.8409
+
+Handwritten dataset:
+Clustering results on cluster assignments of each view:
+ACC1 = 0.9690 NMI1 = 0.9308 PUR1 = 0.9690 ARI1=0.9664
+ACC2 = 0.9691 NMI2 = 0.9310 PUR2 = 0.9691 ARI2=0.9670
+Clustering results on semantic labels: 1592
+ACC = 0.9691 NMI = 0.9309 PUR = 0.9690 ARI=0.9669
+
+Scene-15 dataset:
+lustering results on cluster assignments of each view:
+ACC1 = 0.3881 NMI1 = 0.4261 PUR1 = 0.4312 ARI1=0.4156
+ACC2 = 0.4104 NMI2 = 0.4130 PUR2 = 0.4586 ARI2=0.4233
+Clustering results on semantic labels: 1500
+ACC = 0.4087 NMI = 0.4195 PUR = 0.4466 ARI=0.4201
+
+These results vary from the original paper, as these are different models, created on our local implementations.
