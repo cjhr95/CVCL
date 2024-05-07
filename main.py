@@ -62,7 +62,7 @@ if __name__ == "__main__":
         # db checked 97.62
         args.learning_rate = 0.0005
         args.batch_size = 35
-        args.con_epochs = 400
+        args.con_epochs = 200
         args.seed = 10
         args.normalized = False
 
