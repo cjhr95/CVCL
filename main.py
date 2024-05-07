@@ -7,14 +7,15 @@ from loss import *
 
 import torch
 import scipy.io as sio
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
-parser = argparse.ArgumentParser(description='CVCLNet')
+parser = argparse.ArgumentParser(description='MSRCv1')
 parser.add_argument('--load_model', default=False, help='Testing if True or training.')
 parser.add_argument('--save_model', default=False, help='Saving the model after training.')
 
-parser.add_argument('--db', type=str, default='MSRCv1',
+parser.add_argument('--db', type=str, default='BDGP',
                     choices=['MSRCv1', 'MNIST-USPS', 'COIL20', 'scene', 'hand', 'Fashion', 'BDGP'],
                     help='dataset name')
 parser.add_argument('--seed', type=int, default=10, help='Initializing random seed.')
@@ -47,14 +48,28 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+def fd(loss):
+    #print(loss[0])
+    #loss = loss.detach().numpy()
+    constants = np.array((-137/60, 5, -5, 10/3, -5/4, 1/5))
+    pointwise_multiplication = [
+        loss[i] * constants[i] for i in range(len(constants))
+    ]
+    return sum(pointwise_multiplication)
 
+def normalized_sl(rates):
+    epsilon=1e-8
+    rates_n=[]
+    for rate in rates:
+        rates_n.append(rate/(sum(rates)+epsilon))
+    return rates_n
 if __name__ == "__main__":
 
     if args.db == "MSRCv1":
         # db checked 97.62
         args.learning_rate = 0.0005
         args.batch_size = 35
-        args.con_epochs = 400
+        args.con_epochs = 200
         args.seed = 10
         args.normalized = False
 
@@ -140,7 +155,7 @@ if __name__ == "__main__":
         args.learning_rate = 0.0001
         args.batch_size = 250
         args.seed = 10
-        args.con_epochs = 100
+        args.con_epochs = 400
         args.normalized = True
 
         dim_high_feature = 2000
@@ -149,8 +164,10 @@ if __name__ == "__main__":
         lmd = 0.01
         beta = 0.01
 
+
     set_seed(args.seed)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     mv_data = MultiviewData(args.db, device)
     num_views = len(mv_data.data_views)
     num_samples = mv_data.labels.size
@@ -170,27 +187,60 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(mnw.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
     if args.load_model:
-        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db)
+        state_dict = torch.load('./models/CVCL_pytorch_model_%s.pth' % args.db, )#map_location=torch.device('cpu')
         mnw.load_state_dict(state_dict)
 
     else:
-        pre_train_loss_values = pre_train(mnw, mv_data, args.batch_size, args.mse_epochs, optimizer)
+       # pre_train_loss_values = pre_train(mnw, mv_data, args.batch_size, args.mse_epochs, optimizer)
 
         # sio.savemat('pre_train_loss_%s.mat' % args.db, {'data': pre_train_loss_values})
 
         t = time.time()
         fine_tuning_loss_values = np.zeros(args.con_epochs, dtype=np.float64)
+        beta=0.1
+        epsilon=1e-8
+
+        epoch_per=0.1*args.con_epochs
+        weights=[1]*3
+        slope=[]*3
+        Loss_3=[[] for _ in range(3)]
+        average_cmp_val=[]*3
+        rate_of_changes=[]*3
         for epoch in range(args.con_epochs):
-            total_loss = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
-                                           args.temperature_l, args.normalized, epoch, optimizer)
-            fine_tuning_loss_values[epoch] = total_loss
-            # if epoch > 0 and (epoch % 50 == 0 or epoch == args.con_epochs - 1):
-            #     acc, nmi, pur, ari = valid(mnw, mv_data, args.batch_size)
-            #     with open('result_%s.txt' % args.db, 'a+') as f:
-            #         f.write('{} \t {} \t {} \t {} \t {} \t {} \t {} \t {:.6f} \t {:.4f} \n'.format(
-            #             dim_high_feature, dim_low_feature, args.seed, args.batch_size,
-            #             args.learning_rate, args.temperature_l, lmd, acc, (time.time() - t)))
-            #         f.flush()
+            # Storing Loss values for first 6 epochs
+            if epoch<6:
+                total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
+                                           args.temperature_l, args.normalized, epoch, optimizer,weights)
+                for (idx,curr_loss) in enumerate(curr_loss_3):
+                    Loss_3[idx].append(curr_loss.item())
+                fine_tuning_loss_values[epoch] = total_loss  
+                  
+                #Calculating weights using last 6 loss values of each component        
+            else:
+                average_cmp_val=[0]*3
+                rate_of_changes=[0]*3
+                for (idx,loss_cmp_vals) in enumerate(Loss_3):
+                    average_cmp_val[idx]=np.mean(loss_cmp_vals[-6:])
+                    rate_of_changes[idx]=fd(loss_cmp_vals[-6:])
+                rate_of_changes=torch.tensor(rate_of_changes)
+                average_cmp_val=torch.tensor(average_cmp_val)
+                exp_of_input = torch.exp(beta * (rate_of_changes - torch.max(rate_of_changes)))
+                exp_of_input = torch.multiply(average_cmp_val[idx], exp_of_input)
+                weights=exp_of_input / (torch.sum(exp_of_input) + epsilon)#weights array
+                lmd=1
+                beta=1
+                total_loss,curr_loss_3 = contrastive_train(mnw, mv_data, mvc_loss, args.batch_size, lmd, beta,
+                                           args.temperature_l, args.normalized, epoch, optimizer,weights)
+                for (idx,curr_loss) in enumerate(curr_loss_3):
+                    Loss_3[idx].append(curr_loss.item())
+                fine_tuning_loss_values[epoch] = total_loss
+            if epoch > 0 and (epoch % 50 == 0 or epoch == args.con_epochs - 1):
+                acc, nmi, pur, ari = valid(mnw, mv_data, args.batch_size)
+                with open('result_%s.txt' % args.db, 'a+') as f:
+                    f.write('{} \t {} \t {} \t {} \t {} \t {} \t {} \t {:.6f} \t {:.4f} \n'.format(
+                        dim_high_feature, dim_low_feature, args.seed, args.batch_size,
+                        args.learning_rate, args.temperature_l, lmd, acc, (time.time() - t)))
+                    f.flush()
 
         # sio.savemat('fine_tuning_loss_%s.mat' % args.db, {'data': fine_tuning_loss_values})
 

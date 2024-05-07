@@ -15,6 +15,8 @@ def pre_train(network_model, mv_data, batch_size, epochs, optimizer):
 
     criterion = torch.nn.MSELoss()
     for epoch in range(epochs):
+        # if(epoch>10):
+        #     break
         total_loss = 0.
         for batch_idx, (sub_data_views, _) in enumerate(mv_data_loader):
             _, dvs, _ = network_model(sub_data_views)
@@ -38,7 +40,7 @@ def pre_train(network_model, mv_data, batch_size, epochs, optimizer):
 
 
 def contrastive_train(network_model, mv_data, mvc_loss, batch_size, lmd, beta, temperature_l, normalized, epoch,
-                      optimizer):
+                      optimizer,weights):
 
     network_model.train()
     mv_data_loader, num_views, num_samples, num_clusters = get_multiview_data(mv_data, batch_size)
@@ -46,22 +48,28 @@ def contrastive_train(network_model, mv_data, mvc_loss, batch_size, lmd, beta, t
     total_loss = 0.
     for batch_idx, (sub_data_views, _) in enumerate(mv_data_loader):
         lbps, dvs, _ = network_model(sub_data_views)
-        loss_list = list()
+        loss_list = [[] for _ in range(3)]
         for i in range(num_views):
             for j in range(i + 1, num_views):
-                loss_list.append(lmd * mvc_loss.forward_label(lbps[i], lbps[j], temperature_l, normalized))
-                loss_list.append(beta * mvc_loss.forward_prob(lbps[i], lbps[j]))
-            loss_list.append(criterion(sub_data_views[i], dvs[i]))
-        loss = sum(loss_list)
+                loss_list[0].append(lmd * mvc_loss.forward_label(lbps[i], lbps[j], temperature_l, normalized))
+                loss_list[1].append(beta * mvc_loss.forward_prob(lbps[i], lbps[j]))
+            loss_list[2].append(criterion(sub_data_views[i], dvs[i]))
+        curr_loss_val=[]
+        for loss_values in loss_list:
+            curr_loss_val.append(sum(loss_values))
+            
+        total_loss=0
+        for idx,list in enumerate(loss_list):
+            total_loss+=sum(list)*weights[idx]
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
-        total_loss += loss.item()
+        total_loss += total_loss.item()
 
     if epoch % 10 == 0:
         print('Contrastive_train, epoch {} loss:{:.7f}'.format(epoch, total_loss / num_samples))
-
-    return total_loss
+    # curr_loss_val=curr_loss_val.tolist()
+    return total_loss,curr_loss_val
 
 
 def inference(network_model, mv_data, batch_size):
